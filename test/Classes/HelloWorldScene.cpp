@@ -24,6 +24,8 @@
 
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
+#include <spine/spine-cocos2dx.h> // TODO: del
+#include "spine/spine.h"
 
 USING_NS_CC;
 
@@ -37,6 +39,20 @@ static void problemLoading(const char* filename)
 {
     printf("Error while loading: %s\n", filename);
     printf("Depending on how you compiled you might have to add 'Resources/' in front of filenames in HelloWorldScene.cpp\n");
+}
+
+static cocos2d::Sprite* createButton(const std::string& title)
+{
+    auto button = Sprite::create("assets/button.png");
+    assert(button);
+
+    auto label = Label::createWithTTF(title, "fonts/Marker Felt.ttf", 32);
+    assert(label);
+
+    label->setNormalizedPosition({ 0.5f, 0.5f });
+    button->addChild(label);
+
+    return button;
 }
 
 // on "init" you need to initialize your instance
@@ -57,7 +73,7 @@ bool HelloWorld::init()
     //    you may modify it.
 
     // add a "close" icon to exit the progress. it's an autorelease object
-    auto closeItem = MenuItemImage::create(
+    /*auto closeItem = MenuItemImage::create(
                                            "CloseNormal.png",
                                            "CloseSelected.png",
                                            CC_CALLBACK_1(HelloWorld::menuCloseCallback, this));
@@ -73,20 +89,20 @@ bool HelloWorld::init()
         float x = origin.x + visibleSize.width - closeItem->getContentSize().width/2;
         float y = origin.y + closeItem->getContentSize().height/2;
         closeItem->setPosition(Vec2(x,y));
-    }
+    }*/
 
     // create menu, it's an autorelease object
-    auto menu = Menu::create(closeItem, NULL);
+    /*auto menu = Menu::create(closeItem, NULL);
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu, 1);
-
+    */
     /////////////////////////////
     // 3. add your codes below...
 
     // add a label shows "Hello World"
     // create and initialize a label
 
-    auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
+    /*auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
     if (label == nullptr)
     {
         problemLoading("'fonts/Marker Felt.ttf'");
@@ -99,10 +115,10 @@ bool HelloWorld::init()
 
         // add the label as a child to this layer
         this->addChild(label, 1);
-    }
+    }*/
 
     // add "HelloWorld" splash screen"
-    auto sprite = Sprite::create("HelloWorld.png");
+    /*auto sprite = Sprite::create("HelloWorld.png");
     if (sprite == nullptr)
     {
         problemLoading("'HelloWorld.png'");
@@ -114,7 +130,44 @@ bool HelloWorld::init()
 
         // add the sprite as a child to this layer
         this->addChild(sprite, 0);
+    }*/
+
+    auto attackButton = createButton("attack");
+    attackButton->setNormalizedPosition({ 0.75f, 0.75f });
+    addChild(attackButton);
+
+    auto stopButton = createButton("stop");
+    stopButton->setNormalizedPosition({ 0.75f, 0.66f });
+    addChild(stopButton);
+
+    auto skeletonNode = spine::SkeletonAnimation::createWithJsonFile("assets/hero_2.json", "assets/hero_2.atlas", 3.0f);
+    skeletonNode->setNormalizedPosition({ 0.5f, 0.5f });
+    //skeletonNode->setAnimation(0, "drive", true);
+    //skeletonNode->setPosition(Vec2(_contentSize.width / 2 + 400, 20));
+    //skeletonNode->setScale(0.8);
+
+    auto animsCount = skeletonNode->getSkeleton()->data->animationsCount;
+    std::vector<std::string> animNames;
+
+    for (int i = 0; i < animsCount; i++)
+    {
+        auto name = skeletonNode->getSkeleton()->data->animations[i]->name;
+        animNames.push_back(name);
     }
+
+    skeletonNode->setAnimation(0, animNames.at(0).c_str(), true);
+    
+    addChild(skeletonNode); // TODO: memory leak, add deleting
+
+    //auto _atlas = spAtlas_createFromFile("assets/hero_2.atlas", 0);
+    //CCASSERT(_atlas, "Error reading atlas file.");
+
+    //auto _attachmentLoader = (spAttachmentLoader*)Cocos2dAttachmentLoader_create(_atlas);
+
+
+    //spAtlas_dispose(_atlas);
+
+
     return true;
 }
 

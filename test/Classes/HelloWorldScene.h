@@ -31,6 +31,14 @@
 class HelloWorld : public cocos2d::Scene
 {
 public:
+	enum class State
+	{
+		None,
+		Idle,
+		Move,
+		Attack
+	};
+
 	HelloWorld();
 	//~HelloWorld() = default;
 
@@ -46,9 +54,12 @@ public:
 	CREATE_FUNC(HelloWorld);
 
 private:
+	cocos2d::Node* HelloWorld::createButton(const std::string& title, std::function<void()> onClick);
+
 	spine::SkeletonAnimation* playerSpine;
 	cocos2d::Vec2 playerMoveTarget;
 	bool playerMovingToTarget;
+	State state;
 };
 
 #endif // __HELLOWORLD_SCENE_H__

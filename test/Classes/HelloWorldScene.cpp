@@ -1,35 +1,13 @@
-/****************************************************************************
- Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- 
- http://www.cocos2d-x.org
- 
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
- 
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
- 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- THE SOFTWARE.
- ****************************************************************************/
-
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
+#include "ui/UIButton.h"
 
 USING_NS_CC;
 
 HelloWorld::HelloWorld() :
 	playerMoveTarget(0.0f, 0.0f),
-	playerMovingToTarget(false)
+	playerMovingToTarget(false),
+	state(State::None)
 {
 }
 
@@ -38,38 +16,25 @@ Scene* HelloWorld::createScene()
 	return HelloWorld::create();
 }
 
-// Print useful error message instead of segfaulting when files are not there.
-static void problemLoading(const char* filename)
+cocos2d::Node* HelloWorld::createButton(const std::string& title, std::function<void()> onClick)
 {
-	printf("Error while loading: %s\n", filename);
-	printf("Depending on how you compiled you might have to add 'Resources/' in front of filenames in HelloWorldScene.cpp\n");
-}
-
-static cocos2d::Sprite* createButton(const std::string& title)
-{
-	auto button = Sprite::create("assets/button.png");
+	auto button = ui::Button::create("assets/button.png");
 	assert(button);
-
-	auto label = Label::createWithTTF(title, "fonts/Marker Felt.ttf", 32);
-	assert(label);
-
-	label->setNormalizedPosition({ 0.5f, 0.5f });
-	button->addChild(label);
-
+	button->addClickEventListener([onClick](auto ref) {
+		onClick();
+	});
+	button->setTitleFontName("fonts/Marker Felt.ttf");
+	button->setTitleText(title);
+	button->setTitleFontSize(32.0f);
 	return button;
 }
 
-// on "init" you need to initialize your instance
 bool HelloWorld::init()
 {
-	//////////////////////////////
-	// 1. super init first
-	if ( !Scene::init() )
-	{
+	if (!Scene::init())
 		return false;
-	}
 
-	auto visibleSize = Director::getInstance()->getVisibleSize();
+	/*auto visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 	/////////////////////////////
@@ -77,7 +42,7 @@ bool HelloWorld::init()
 	//    you may modify it.
 
 	// add a "close" icon to exit the progress. it's an autorelease object
-	/*auto closeItem = MenuItemImage::create(
+	auto closeItem = MenuItemImage::create(
 										   "CloseNormal.png",
 										   "CloseSelected.png",
 										   CC_CALLBACK_1(HelloWorld::menuCloseCallback, this));
@@ -138,6 +103,9 @@ bool HelloWorld::init()
 
 	auto mouseListener = EventListenerMouse::create();
 	mouseListener->onMouseDown = [this](EventMouse* event) {
+		if (!playerMovingToTarget)
+			playerSpine->setAnimation(0, "move", true);
+	
 		auto x = event->getCursorX();
 		auto y = event->getCursorY();
 		playerMoveTarget = convertToNodeSpace({ x, y });
@@ -145,13 +113,17 @@ bool HelloWorld::init()
 	};
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener, this);
 
-	//CCDirector::sharedDirector()->getEventDispatcher()->add
-
-	auto attackButton = createButton("attack");
+	auto attackButton = createButton("attack", [this] {
+		playerMovingToTarget = false;
+		playerSpine->setAnimation(0, "attack", true);
+	});
 	attackButton->setNormalizedPosition({ 0.75f, 0.75f });
 	addChild(attackButton);
 
-	auto stopButton = createButton("stop");
+	auto stopButton = createButton("stop", [this] {
+		playerMovingToTarget = false;
+		playerSpine->setAnimation(0, "idle", true);
+	});
 	stopButton->setNormalizedPosition({ 0.75f, 0.6f });
 	addChild(stopButton);
 
@@ -167,17 +139,12 @@ bool HelloWorld::init()
 		animNames.push_back(name);
 	}
 
-	playerSpine->setAnimation(0, animNames.at(0).c_str(), true);
-	
 	addChild(playerSpine);
 
-	//auto _atlas = spAtlas_createFromFile("assets/hero_2.atlas", 0);
-	//CCASSERT(_atlas, "Error reading atlas file.");
+	playerSpine->setAnimation(0, "attack", true);
 
-	//auto _attachmentLoader = (spAttachmentLoader*)Cocos2dAttachmentLoader_create(_atlas);
-
-
-	//spAtlas_dispose(_atlas);
+	playerSpine->setMix("idle", "move", 0.25f);
+	playerSpine->setMix("move", "idle", 0.25f);
 
 	scheduleUpdate();
 
@@ -200,6 +167,8 @@ void HelloWorld::update(float delta)
 
 		auto nextPos = pos + (direction * delta * playerSpeed);
 
+		playerSpine->setScaleX(direction.x > 0.0f ? -1.0f : 1.0f);
+
 		if (pos.distance(nextPos) < pos.distance(playerMoveTarget))
 		{
 			playerSpine->setPosition(nextPos);
@@ -208,6 +177,7 @@ void HelloWorld::update(float delta)
 		{
 			playerSpine->setPosition(playerMoveTarget);
 			playerMovingToTarget = false;
+			playerSpine->setAnimation(0, "idle", true);
 		}
 	}
 }

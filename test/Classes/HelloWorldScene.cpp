@@ -101,17 +101,19 @@ bool HelloWorld::init()
 		this->addChild(sprite, 0);
 	}*/
 
-	auto mouseListener = EventListenerMouse::create();
-	mouseListener->onMouseDown = [this](EventMouse* event) {
+	auto listener = cocos2d::EventListenerTouchOneByOne::create();
+	listener->setSwallowTouches(true);
+	listener->onTouchBegan = [&](cocos2d::Touch* touch, cocos2d::Event* event) {
 		if (!playerMovingToTarget)
 			playerSpine->setAnimation(0, "move", true);
-	
-		auto x = event->getCursorX();
-		auto y = event->getCursorY();
-		playerMoveTarget = convertToNodeSpace({ x, y });
+
+		auto pos = touch->getLocation();
+		playerMoveTarget = pos;//convertToNodeSpace(pos);
 		playerMovingToTarget = true;
+		return true; 
 	};
-	_eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener, this);
+
+	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
 	auto attackButton = createButton("attack", [this] {
 		playerMovingToTarget = false;

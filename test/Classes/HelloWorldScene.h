@@ -47,9 +47,6 @@ public:
 	virtual bool init();
 	void update(float delta) override;
 
-	// a selector callback
-	void menuCloseCallback(cocos2d::Ref* pSender);
-	
 	// implement the "static create()" method manually
 	CREATE_FUNC(HelloWorld);
 

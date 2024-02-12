@@ -41,7 +41,7 @@ bool HelloWorld::init()
 			playerSpine->setAnimation(0, "move", true);
 
 		auto pos = touch->getLocation();
-		playerMoveTarget = pos;//convertToNodeSpace(pos);
+		playerMoveTarget = pos;
 		playerMovingToTarget = true;
 		return true; 
 	};
@@ -52,14 +52,16 @@ bool HelloWorld::init()
 		playerMovingToTarget = false;
 		playerSpine->setAnimation(0, "attack", true);
 	});
-	attackButton->setNormalizedPosition({ 0.75f, 0.75f });
+	attackButton->setAnchorPoint({ 0.0f, 0.0f });
+	attackButton->setPosition({ 8.0f, 8.0f });
 	addChild(attackButton);
 
 	auto stopButton = createButton("stop", [this] {
 		playerMovingToTarget = false;
 		playerSpine->setAnimation(0, "idle", true);
 	});
-	stopButton->setNormalizedPosition({ 0.75f, 0.6f });
+	stopButton->setAnchorPoint({ 0.0f, 0.0f });
+	stopButton->setPosition({ 8.0f, 108.0f });
 	addChild(stopButton);
 
 	playerSpine = spine::SkeletonAnimation::createWithJsonFile("assets/hero_2.json", "assets/hero_2.atlas", 3.0f);
@@ -76,7 +78,7 @@ bool HelloWorld::init()
 
 	addChild(playerSpine);
 
-	playerSpine->setAnimation(0, "attack", true);
+	playerSpine->setAnimation(0, "idle", true);
 
 	playerSpine->setMix("idle", "move", 0.25f);
 	playerSpine->setMix("move", "idle", 0.25f);
@@ -90,7 +92,7 @@ void HelloWorld::update(float delta)
 {
 	cocos2d::Scene::update(delta);
 
-	constexpr float playerSpeed = 200.0f;
+	constexpr float playerSpeed = 300.0f;
 
 	if (playerMovingToTarget)
 	{

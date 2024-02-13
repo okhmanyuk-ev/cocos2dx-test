@@ -4,11 +4,45 @@
 
 USING_NS_CC;
 
-HelloWorld::HelloWorld() :
-	playerMoveTarget(0.0f, 0.0f),
-	playerMovingToTarget(false),
-	state(State::None)
-{
+bool Character::init() {
+	spine = spine::SkeletonAnimation::createWithJsonFile("assets/hero_2.json", "assets/hero_2.atlas", 3.0f);
+	spine->setNormalizedPosition({ 0.5f, 0.5f });
+	spine->setAnimation(0, "idle", true);
+		
+	addChild(spine);
+
+	return true;
+}
+
+void Character::setState(State value) {
+	if (state == value)
+		return;
+	
+	state = value;
+
+	if (state == State::None)
+		return;
+
+	static const std::unordered_map<State, std::string> StateAnims = {
+		{ State::Attack, "attack" },
+		{ State::Idle, "idle" },
+		{ State::Move, "move" },
+	};
+
+	auto anim = spine->setAnimation(0, StateAnims.at(state), true);
+	anim->mixDuration = 0.25f;
+}
+
+Character::State Character::getState() const {
+	return state;
+}
+
+void Character::setMoveTarget(const cocos2d::Vec2 value) {
+	moveTarget = value;
+}
+
+const cocos2d::Vec2& Character::getMoveTarget() const {
+	return moveTarget;
 }
 
 Scene* HelloWorld::createScene()
@@ -37,51 +71,30 @@ bool HelloWorld::init()
 	auto listener = cocos2d::EventListenerTouchOneByOne::create();
 	listener->setSwallowTouches(true);
 	listener->onTouchBegan = [&](cocos2d::Touch* touch, cocos2d::Event* event) {
-		if (!playerMovingToTarget)
-			playerSpine->setAnimation(0, "move", true);
-
-		auto pos = touch->getLocation();
-		playerMoveTarget = pos;
-		playerMovingToTarget = true;
+		player->setMoveTarget(touch->getLocation());
+		player->setState(Character::State::Move);
 		return true; 
 	};
 
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
 	auto attackButton = createButton("attack", [this] {
-		playerMovingToTarget = false;
-		playerSpine->setAnimation(0, "attack", true);
+		player->setState(Character::State::Attack);
 	});
 	attackButton->setAnchorPoint({ 0.0f, 0.0f });
 	attackButton->setPosition({ 8.0f, 8.0f });
 	addChild(attackButton);
 
 	auto stopButton = createButton("stop", [this] {
-		playerMovingToTarget = false;
-		playerSpine->setAnimation(0, "idle", true);
+		player->setState(Character::State::Idle);
 	});
 	stopButton->setAnchorPoint({ 0.0f, 0.0f });
 	stopButton->setPosition({ 8.0f, 108.0f });
 	addChild(stopButton);
 
-	playerSpine = spine::SkeletonAnimation::createWithJsonFile("assets/hero_2.json", "assets/hero_2.atlas", 3.0f);
-	playerSpine->setNormalizedPosition({ 0.5f, 0.5f });
-	
-	auto animsCount = playerSpine->getSkeleton()->data->animationsCount;
-	std::vector<std::string> animNames;
-
-	for (int i = 0; i < animsCount; i++)
-	{
-		auto name = playerSpine->getSkeleton()->data->animations[i]->name;
-		animNames.push_back(name);
-	}
-
-	addChild(playerSpine);
-
-	playerSpine->setAnimation(0, "idle", true);
-
-	playerSpine->setMix("idle", "move", 0.25f);
-	playerSpine->setMix("move", "idle", 0.25f);
+	player = Character::create();
+	player->setNormalizedPosition({ 0.5f, 0.5f });
+	addChild(player);
 
 	scheduleUpdate();
 
@@ -94,27 +107,26 @@ void HelloWorld::update(float delta)
 
 	constexpr float playerSpeed = 300.0f;
 
-	if (playerMovingToTarget)
+	if (player->getState() == Character::State::Move)
 	{
-		auto pos = playerSpine->getPosition();
+		auto pos = player->getPosition();
 
-		auto direction = playerMoveTarget;
+		auto direction = player->getMoveTarget();
 		direction.subtract(pos);
 		direction.normalize();
 
 		auto nextPos = pos + (direction * delta * playerSpeed);
 
-		playerSpine->setScaleX(direction.x > 0.0f ? -1.0f : 1.0f);
+		player->setScaleX(direction.x > 0.0f ? -1.0f : 1.0f);
 
-		if (pos.distance(nextPos) < pos.distance(playerMoveTarget))
+		if (pos.distance(nextPos) < pos.distance(player->getMoveTarget()))
 		{
-			playerSpine->setPosition(nextPos);
+			player->setPosition(nextPos);
 		}
 		else
 		{
-			playerSpine->setPosition(playerMoveTarget);
-			playerMovingToTarget = false;
-			playerSpine->setAnimation(0, "idle", true);
+			player->setPosition(player->getMoveTarget());
+			player->setState(Character::State::Idle);
 		}
 	}
 }

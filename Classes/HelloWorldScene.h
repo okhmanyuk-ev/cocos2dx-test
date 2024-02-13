@@ -28,7 +28,7 @@
 #include "cocos2d.h"
 #include <spine/spine-cocos2dx.h>
 
-class HelloWorld : public cocos2d::Scene
+class Character : public cocos2d::Node
 {
 public:
 	enum class State
@@ -39,24 +39,37 @@ public:
 		Attack
 	};
 
-	HelloWorld();
-	//~HelloWorld() = default;
+public:
+	CREATE_FUNC(Character);
+
+	bool init() override;
+
+	void setState(State value);
+	State getState() const;
+
+	void setMoveTarget(const cocos2d::Vec2 value);
+	const cocos2d::Vec2& getMoveTarget() const;
+
+private:
+	spine::SkeletonAnimation* spine;
+	State state = State::None;
+	cocos2d::Vec2 moveTarget = cocos2d::Vec2(0.0f, 0.0f);
+};
+
+class HelloWorld : public cocos2d::Scene
+{
+public:
+	CREATE_FUNC(HelloWorld);
 
 	static cocos2d::Scene* createScene();
 
-	virtual bool init();
+	bool init() override;
 	void update(float delta) override;
-
-	// implement the "static create()" method manually
-	CREATE_FUNC(HelloWorld);
 
 private:
 	cocos2d::Node* HelloWorld::createButton(const std::string& title, std::function<void()> onClick);
 
-	spine::SkeletonAnimation* playerSpine;
-	cocos2d::Vec2 playerMoveTarget;
-	bool playerMovingToTarget;
-	State state;
+	Character* player;
 };
 
 #endif // __HELLOWORLD_SCENE_H__
